@@ -4,3 +4,5 @@ langchain==0.3.25
 langchain-ollama==0.3.3
 langgraph==0.4.5
 playwright==1.52.0
+beautifulsoup4==4.13.4
+Markdown==3.8

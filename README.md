@@ -26,26 +26,25 @@ Install with [pipx](https://pypa.github.io/pipx/):
 pipx install hey-helper
 ```
 
-Or clone this repository and install dependencies:
+Or clone this repository and install locally with pipx:
 ```sh
-pip install -r requirements.txt
-python -m playwright install
+pipx install .
 ```
 
 ## Usage
 Ask a question:
 ```sh
-python main.py <your question or task>
+hey <your question or task>
 ```
 
 Force web search (DuckDuckGo):
 ```sh
-python main.py --search <your question>
+hey --search <your question>
 ```
 
 Set config (model/system prompt):
 ```sh
-python main.py --set-config
+hey --set-config
 ```
 
 ## Configuration

@@ -5,8 +5,8 @@ import textwrap
 from langchain_ollama import OllamaLLM
 from playwright.async_api import async_playwright
 from langchain.tools import Tool
+from hey_helper.core.stream import stream_and_echo, stream
 
-# Use a default config for the LLM, or import from config if needed
 DEFAULT_MODEL = "gemma3"
 DEFAULT_BASE_URL = "http://localhost:11434"
 
@@ -18,7 +18,7 @@ def extract_search_keywords(user_query, llm=None):
         "Return them as a comma-separated list, no explanations.\n\n"
         f"User query: {user_query}"
     )
-    response = "".join([chunk for chunk in llm.stream(prompt)])
+    response = stream(llm, prompt)
     keywords = [k.strip() for k in response.split(",") if k.strip()]
     return keywords if keywords else [user_query]
 
@@ -28,12 +28,9 @@ def summarize_results(results, query, llm=None):
     wrapped = ["\n".join(textwrap.wrap(part, width=128)) for part in results]
     summary_input = "\n\n".join(wrapped)
     summary_prompt = (
-        f"The user has asked a question: {query}\n"
-        "Summarize the following web search results in a concise paragraph. "
-        "Do not use markdown.\n\n" + summary_input
+        f"Summarize the following web search results in a concise paragraph: \n\n {summary_input}\n\n"
     )
-    summary = "".join([chunk for chunk in llm.stream(summary_prompt)])
-    click.echo(summary, nl=True)
+    stream_and_echo(llm, summary_prompt)
     exit(0)
 
 def fallback_search(query, llm=None):
@@ -52,7 +49,7 @@ def fallback_search(query, llm=None):
     if llm is None:
         llm = OllamaLLM(model=DEFAULT_MODEL, base_url=DEFAULT_BASE_URL)
     prompt = f"User prompt: {query}"
-    response = "".join([chunk for chunk in llm.stream(prompt)])
+    response = stream(llm, prompt)
     return response
 
 def search_headless(query, llm=None):
@@ -75,7 +72,7 @@ def search_headless(query, llm=None):
                         return
                     page = await browser.new_page()
                     await page.goto(f"https://duckduckgo.com/?q={requests.utils.quote(keyword)}&t=h_&ia=web")
-                    await asyncio.sleep(2)
+                    await asyncio.sleep(3)
                     anchors = await page.query_selector_all('a[data-testid="result-title-a"]')
                     click.echo(f"[+] Found {len(anchors)} links for '{keyword}'.", err=True)
                     urls = []
@@ -113,13 +110,11 @@ def search_headless(query, llm=None):
     results = fallback_search(query, llm=llm)
     return results
 
-def headless_search_tool():
+def web_search_tool():
     def _search(query: str) -> str:
         return search_headless(query)
     return Tool(
-        name="headless_search",
+        name="web_search",
         func=_search,
         description="Search the web for up-to-date information using a headless browser."
     )
-
-# Optionally, you can provide Tool wrappers for integration
